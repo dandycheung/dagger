@@ -18,6 +18,7 @@ package dagger.hilt.processor.internal.root;
 
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static dagger.hilt.processor.internal.HiltCompilerOptions.useAggregatingRootProcessor;
+import static dagger.internal.codegen.extension.DaggerCollectors.toOptional;
 import static dagger.internal.codegen.extension.DaggerStreams.toImmutableList;
 import static dagger.internal.codegen.extension.DaggerStreams.toImmutableSet;
 
@@ -113,7 +114,14 @@ public final class ComponentTreeDepsProcessingStep extends BaseProcessingStep {
       ImmutableSet<ComponentDescriptor> componentDescriptors =
           defineComponents.getComponentDescriptors(
               DefineComponentClassesMetadata.from(metadata.defineComponentDeps()));
-      ComponentTree tree = ComponentTree.from(componentDescriptors);
+
+      ComponentDescriptor rootComponentDescriptor =
+          componentDescriptors.stream()
+              .filter(descriptor -> descriptor.component().equals(root.rootComponentName()))
+              .collect(toOptional())
+              .orElseThrow(() -> new AssertionError("Missing root: " + root.rootComponentName()));
+
+      ComponentTree tree = ComponentTree.from(componentDescriptors, rootComponentDescriptor);
       ComponentDependencies deps =
           ComponentDependencies.from(
               componentDescriptors,

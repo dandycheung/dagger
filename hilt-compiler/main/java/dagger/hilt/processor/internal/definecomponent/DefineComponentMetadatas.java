@@ -163,26 +163,30 @@ final class DefineComponentMetadatas {
             : Optional.of(get(parent, childPath));
 
     ClassName componentClassName = component.getClassName();
+    if (!componentClassName.equals(ClassNames.SINGLETON_COMPONENT)) {
+      checkHasParentDeclaration(parentComponent, component);
 
+      ProcessorErrors.checkState(
+          !componentClassName.simpleName().equals(ClassNames.SINGLETON_COMPONENT.simpleName()),
+          component,
+          "Cannot have a component with the same simple name as the reserved %s: %s",
+          ClassNames.SINGLETON_COMPONENT.simpleName(),
+          componentClassName.canonicalName());
+    }
+
+    return new AutoValue_DefineComponentMetadatas_DefineComponentMetadata(
+        component, scopes, parentComponent);
+  }
+
+  private void checkHasParentDeclaration(
+      Optional<DefineComponentMetadata> parentComponent, XTypeElement component) {
     ProcessorErrors.checkState(
-        parentComponent.isPresent()
-            || componentClassName.equals(ClassNames.SINGLETON_COMPONENT),
+        parentComponent.isPresent(),
         component,
         "@DefineComponent %s is missing a parent declaration.\n"
             + "Please declare the parent, for example: @DefineComponent(parent ="
             + " SingletonComponent.class)",
         XElements.toStableString(component));
-
-    ProcessorErrors.checkState(
-        componentClassName.equals(ClassNames.SINGLETON_COMPONENT)
-        || !componentClassName.simpleName().equals(ClassNames.SINGLETON_COMPONENT.simpleName()),
-        component,
-        "Cannot have a component with the same simple name as the reserved %s: %s",
-        ClassNames.SINGLETON_COMPONENT.simpleName(),
-        componentClassName.canonicalName());
-
-    return new AutoValue_DefineComponentMetadatas_DefineComponentMetadata(
-        component, scopes, parentComponent);
   }
 
   @AutoValue

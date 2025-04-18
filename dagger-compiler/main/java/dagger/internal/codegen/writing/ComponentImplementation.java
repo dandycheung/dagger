@@ -965,6 +965,7 @@ public final class ComponentImplementation {
                       FieldSpecKind.COMPONENT_REQUIREMENT_FIELD,
                       XPropertySpecs.builder(
                               field.getName(), field.getType()) // SUPPRESS_GET_NAME_CHECK
+                          .addJavaAnnotations(toJavaPoet(field).annotations)
                           .addModifiers(toJavaPoet(field).modifiers)
                           .initializer("this")
                           .build());

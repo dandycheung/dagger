@@ -25,13 +25,13 @@ object AggregatedRootIrValidator {
   fun rootsToProcess(
     isCrossCompilationRootValidationDisabled: Boolean,
     processedRoots: Set<ProcessedRootSentinelIr>,
-    aggregatedRoots: Set<AggregatedRootIr>
+    aggregatedRoots: Set<AggregatedRootIr>,
   ): Set<AggregatedRootIr> {
     val processedRootNames = processedRoots.flatMap { it.roots }.toSet()
     val rootsToProcess =
-      aggregatedRoots.filterNot { processedRootNames.contains(it.root.canonicalName()) }.sortedBy {
-        it.root.canonicalName()
-      }
+      aggregatedRoots
+        .filterNot { processedRootNames.contains(it.root.canonicalName()) }
+        .sortedBy { it.root.canonicalName() }
     val testRootsToProcess = rootsToProcess.filter { it.isTestRoot }
     val appRootsToProcess = rootsToProcess - testRootsToProcess
     fun Collection<AggregatedRootIr>.rootsToString() = map { it.root }.joinToString()
@@ -47,7 +47,8 @@ object AggregatedRootIrValidator {
         Cannot process test roots and app roots in the same compilation unit:
           App root in this compilation unit: ${appRootsToProcess.rootsToString()}
           Test roots in this compilation unit: ${testRootsToProcess.rootsToString()}
-        """.trimIndent()
+        """
+          .trimIndent()
       )
     }
     // Perform validation across roots previous compilation units.
@@ -63,13 +64,15 @@ object AggregatedRootIrValidator {
           Cannot process new roots when there are test roots from a previous compilation unit:
             Test roots from previous compilation unit: ${alreadyProcessedTestRoots.rootsToString()}
             All roots from this compilation unit: ${rootsToProcess.rootsToString()}
-          """.trimIndent()
+          """
+            .trimIndent()
         )
       }
 
       val alreadyProcessedAppRoots =
         aggregatedRoots.filter {
-          !it.isTestRoot && processedRootNames.contains(it.root.canonicalName())
+            !it.isTestRoot &&
+            processedRootNames.contains(it.root.canonicalName())
         }
       if (alreadyProcessedAppRoots.isNotEmpty() && appRootsToProcess.isNotEmpty()) {
         throw InvalidRootsException(
@@ -77,7 +80,8 @@ object AggregatedRootIrValidator {
           Cannot process new app roots when there are app roots from a previous compilation unit:
             App roots in previous compilation unit: ${alreadyProcessedAppRoots.rootsToString()}
             App roots in this compilation unit: ${appRootsToProcess.rootsToString()}
-          """.trimIndent()
+          """
+            .trimIndent()
         )
       }
     }

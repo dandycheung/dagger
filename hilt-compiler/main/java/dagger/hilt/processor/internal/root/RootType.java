@@ -23,7 +23,7 @@ import dagger.hilt.processor.internal.ClassNames;
 /** The valid root types for Hilt applications. */
 // TODO(erichang): Fix this class so we don't have to have placeholders
 enum RootType {
-  ROOT(ClassNames.HILT_ANDROID_APP),
+  HILT_ANDROID_APP(ClassNames.HILT_ANDROID_APP),
 
   // Placeholder to make sure @HiltAndroidTest usages get processed
   HILT_ANDROID_TEST_ROOT(ClassNames.HILT_ANDROID_TEST),
@@ -47,7 +47,7 @@ enum RootType {
 
   public static RootType of(XTypeElement element) {
     if (element.hasAnnotation(ClassNames.HILT_ANDROID_APP)) {
-      return ROOT;
+      return HILT_ANDROID_APP;
     } else if (element.hasAnnotation(ClassNames.HILT_ANDROID_TEST)) {
       return TEST_ROOT;
     } else if (element.hasAnnotation(ClassNames.INTERNAL_TEST_ROOT)) {

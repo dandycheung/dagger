@@ -40,7 +40,6 @@ gen_maven_artifact(
         "//dagger-compiler/main/java/dagger/internal/codegen/bindinggraphvalidation",
         "//dagger-compiler/main/java/dagger/internal/codegen/compileroption",
         "//dagger-compiler/main/java/dagger/internal/codegen/componentgenerator",
-        "//dagger-compiler/main/java/dagger/internal/codegen/javapoet",
         "//dagger-compiler/main/java/dagger/internal/codegen/kotlin",
         "//dagger-compiler/main/java/dagger/internal/codegen/langmodel",
         "//dagger-compiler/main/java/dagger/internal/codegen/model",

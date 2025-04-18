@@ -22,9 +22,11 @@ import static com.squareup.javapoet.MethodSpec.methodBuilder;
 import static dagger.internal.codegen.extension.DaggerStreams.toImmutableList;
 import static dagger.internal.codegen.extension.DaggerStreams.toImmutableSet;
 import static dagger.internal.codegen.langmodel.Accessibility.isElementAccessibleFrom;
+import static dagger.internal.codegen.xprocessing.XCodeBlocks.makeParametersCodeBlock;
 import static dagger.internal.codegen.xprocessing.XElements.closestEnclosingTypeElement;
 import static javax.lang.model.element.Modifier.PRIVATE;
 
+import androidx.room.compiler.codegen.XCodeBlock;
 import androidx.room.compiler.codegen.XTypeName;
 import androidx.room.compiler.codegen.XTypeSpec;
 import androidx.room.compiler.processing.XConstructorElement;
@@ -41,7 +43,6 @@ import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
-import dagger.internal.codegen.javapoet.CodeBlocks;
 import dagger.internal.codegen.xprocessing.XTypeNames;
 import dagger.internal.codegen.xprocessing.XTypeSpecs;
 import java.util.Optional;
@@ -122,7 +123,8 @@ public final class SourceFileHjarGenerator<T> extends SourceFileGenerator<T> {
       getRequiredSuperCall(packageName, completeType)
           .ifPresent(superCall -> skeleton.addStatement("$L", superCall));
     } else if (!completeMethod.returnType.equals(toJavaPoet(XTypeName.UNIT_VOID))) {
-      skeleton.addStatement("return $L", getDefaultValueCodeBlock(completeMethod.returnType));
+      skeleton.addStatement(
+          "return $L", toJavaPoet(getDefaultValueCodeBlock(completeMethod.returnType)));
     }
 
     return skeleton
@@ -163,14 +165,15 @@ public final class SourceFileHjarGenerator<T> extends SourceFileGenerator<T> {
     return Optional.of(
         CodeBlock.of(
             "super($L)",
-            CodeBlocks.makeParametersCodeBlock(
-                // We just choose the first constructor (it doesn't really matter since we're just
-                // trying to ensure the constructor body compiles).
-                accessibleConstructors.stream().findFirst().get().getParameters().stream()
-                    .map(XExecutableParameterElement::getType)
-                    .map(XType::getTypeName)
-                    .map(SourceFileHjarGenerator::getDefaultValueCodeBlock)
-                    .collect(toImmutableList()))));
+            toJavaPoet(
+                makeParametersCodeBlock(
+                    // We just choose the first constructor (it doesn't really matter since we're
+                    // just trying to ensure the constructor body compiles).
+                    accessibleConstructors.stream().findFirst().get().getParameters().stream()
+                        .map(XExecutableParameterElement::getType)
+                        .map(XType::getTypeName)
+                        .map(SourceFileHjarGenerator::getDefaultValueCodeBlock)
+                        .collect(toImmutableList())))));
   }
 
   /**
@@ -178,29 +181,29 @@ public final class SourceFileHjarGenerator<T> extends SourceFileGenerator<T> {
    *
    * <p>See https://docs.oracle.com/javase/tutorial/java/nutsandbolts/datatypes.html.
    */
-  private static CodeBlock getDefaultValueCodeBlock(TypeName typeName) {
+  private static XCodeBlock getDefaultValueCodeBlock(TypeName typeName) {
     if (typeName.isPrimitive()) {
       if (typeName.equals(toJavaPoet(XTypeName.PRIMITIVE_BOOLEAN))) {
-        return CodeBlock.of("false");
+        return XCodeBlock.of("false");
       } else if (typeName.equals(toJavaPoet(XTypeName.PRIMITIVE_CHAR))) {
-        return CodeBlock.of("'\u0000'");
+        return XCodeBlock.of("'\u0000'");
       } else if (typeName.equals(toJavaPoet(XTypeName.PRIMITIVE_BYTE))) {
-        return CodeBlock.of("0");
+        return XCodeBlock.of("0");
       } else if (typeName.equals(toJavaPoet(XTypeName.PRIMITIVE_SHORT))) {
-        return CodeBlock.of("0");
+        return XCodeBlock.of("0");
       } else if (typeName.equals(toJavaPoet(XTypeName.PRIMITIVE_INT))) {
-        return CodeBlock.of("0");
+        return XCodeBlock.of("0");
       } else if (typeName.equals(toJavaPoet(XTypeName.PRIMITIVE_LONG))) {
-        return CodeBlock.of("0L");
+        return XCodeBlock.of("0L");
       } else if (typeName.equals(toJavaPoet(XTypeName.PRIMITIVE_FLOAT))) {
-        return CodeBlock.of("0.0f");
+        return XCodeBlock.of("0.0f");
       } else if (typeName.equals(toJavaPoet(XTypeName.PRIMITIVE_DOUBLE))) {
-        return CodeBlock.of("0.0d");
+        return XCodeBlock.of("0.0d");
       } else {
         throw new AssertionError("Unexpected type: " + typeName);
       }
     }
-    return CodeBlock.of("null");
+    return XCodeBlock.of("null");
   }
 
   private FieldSpec skeletonField(FieldSpec completeField) {
@@ -212,7 +215,7 @@ public final class SourceFileHjarGenerator<T> extends SourceFileGenerator<T> {
             .addAnnotations(completeField.annotations);
     if (completeField.modifiers.contains(Modifier.FINAL)) {
       // Final fields must be initialized so use the default value.
-      skeleton.initializer(getDefaultValueCodeBlock(completeField.type));
+      skeleton.initializer(toJavaPoet(getDefaultValueCodeBlock(completeField.type)));
     }
     return skeleton.build();
   }

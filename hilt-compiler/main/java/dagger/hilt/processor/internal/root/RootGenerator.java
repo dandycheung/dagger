@@ -28,9 +28,6 @@ import androidx.room.compiler.processing.XTypeElement;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.graph.GraphBuilder;
-import com.google.common.graph.Graphs;
-import com.google.common.graph.MutableGraph;
 import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.JavaFile;
@@ -57,7 +54,7 @@ final class RootGenerator {
       throws IOException {
     new RootGenerator(
             componentTreeDepsMetadata,
-            RootMetadata.copyWithNewTree(metadata, filterDescriptors(metadata.componentTree())),
+            metadata,
             componentNames,
             env)
         .generateComponents();
@@ -132,26 +129,6 @@ final class RootGenerator {
         JavaFile.builder(componentsWrapperClassName.packageName(), componentsWrapper.build())
             .build();
     RootFileFormatter.write(componentsWrapperJavaFile, env);
-  }
-
-  private static ComponentTree filterDescriptors(ComponentTree componentTree) {
-    MutableGraph<ComponentDescriptor> graph =
-        GraphBuilder.from(componentTree.graph()).build();
-
-    componentTree.graph().nodes().forEach(graph::addNode);
-    componentTree.graph().edges().forEach(graph::putEdge);
-
-    // Remove components that do not have builders (besides the root component) since if
-    // we didn't find any builder class, then we don't need to generate the component
-    // since it would be inaccessible.
-    componentTree.getComponentDescriptors().stream()
-        .filter(descriptor -> !descriptor.isRoot() && !descriptor.creator().isPresent())
-        .forEach(graph::removeNode);
-
-    // The graph may still have nodes that are children of components that don't have builders,
-    // so we need to find reachable nodes from the root and create a new graph to remove those.
-    // We reuse the root from the original tree since it should not have been removed.
-    return ComponentTree.from(Graphs.reachableNodes(graph, componentTree.root()));
   }
 
   private ImmutableMap<ComponentDescriptor, ClassName> subcomponentBuilderModules(

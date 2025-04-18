@@ -49,19 +49,6 @@ public final class RootMetadata {
       ComponentDependencies deps,
       AliasOfs aliasOfs,
       XProcessingEnv env) {
-    return createInternal(root, componentTree, deps, aliasOfs, env);
-  }
-
-  static RootMetadata copyWithNewTree(RootMetadata other, ComponentTree componentTree) {
-    return createInternal(other.root, componentTree, other.deps, other.aliasOfs, other.env);
-  }
-
-  private static RootMetadata createInternal(
-      Root root,
-      ComponentTree componentTree,
-      ComponentDependencies deps,
-      AliasOfs aliasOfs,
-      XProcessingEnv env) {
     RootMetadata metadata = new RootMetadata(root, componentTree, deps, aliasOfs, env);
     metadata.validate();
     return metadata;

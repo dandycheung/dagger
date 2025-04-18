@@ -34,7 +34,6 @@ java_library(
     exports = [":shared"],
     deps = [
         "//dagger-compiler/main/java/dagger/internal/codegen/compileroption",
-        "//dagger-compiler/main/java/dagger/internal/codegen/javapoet",
         "//dagger-compiler/main/java/dagger/internal/codegen/langmodel",
         "//dagger-compiler/main/java/dagger/internal/codegen/model",
         "//dagger-compiler/main/java/dagger/internal/codegen/xprocessing",

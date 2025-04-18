@@ -42,7 +42,11 @@ abstract class Root {
    */
   static Root createDefaultRoot(XProcessingEnv env) {
     XTypeElement rootElement = env.requireTypeElement(ClassNames.DEFAULT_ROOT.canonicalName());
-    return new AutoValue_Root(rootElement, rootElement, /*isTestRoot=*/ true);
+    return new AutoValue_Root(
+        rootElement,
+        rootElement,
+        /*isTestRoot=*/ true,
+        ClassNames.SINGLETON_COMPONENT);
   }
 
   /** Creates a {@plainlink Root root} for the given {@plainlink Element element}. */
@@ -51,7 +55,11 @@ abstract class Root {
     if (ClassNames.DEFAULT_ROOT.equals(rootElement.getClassName())) {
       return createDefaultRoot(env);
     }
-    return new AutoValue_Root(rootElement, rootElement, RootType.of(rootElement).isTestRoot());
+    return new AutoValue_Root(
+        rootElement,
+        rootElement,
+        RootType.of(rootElement).isTestRoot(),
+        ClassNames.SINGLETON_COMPONENT);
   }
 
   /** Returns the root element that should be used with processing. */
@@ -65,6 +73,9 @@ abstract class Root {
 
   /** Returns {@code true} if this is a test root. */
   abstract boolean isTestRoot();
+
+  /** Returns the class name of the root component for this root. */
+  abstract ClassName rootComponentName();
 
   /** Returns the class name of the root element. */
   ClassName classname() {

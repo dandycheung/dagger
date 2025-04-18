@@ -30,27 +30,27 @@ private constructor(
   private val aggregatedEarlyEntryPointDeps: Set<AggregatedEarlyEntryPointIr>,
 ) {
   private fun prodComponents(): Set<ComponentTreeDepsIr> {
-    // There should only be one prod root in a given build.
-    val aggregatedRoot = aggregatedRoots.single()
-    return setOf(
-      ComponentTreeDepsIr(
-        name = ComponentTreeDepsNameGenerator().generate(aggregatedRoot.root),
-        rootDeps = setOf(aggregatedRoot.fqName),
-        defineComponentDeps = defineComponentDeps.map { it.fqName }.toSet(),
-        aliasOfDeps = aliasOfDeps.map { it.fqName }.toSet(),
-        aggregatedDeps =
-          // @AggregatedDeps with non-empty replaces are from @TestInstallIn and should not be
-          // installed in production components
-          aggregatedDeps.filter { it.replaces.isEmpty() }.map { it.fqName }.toSet(),
-        uninstallModulesDeps = emptySet(),
-        earlyEntryPointDeps = emptySet(),
-      )
-    )
+    val componentTreeDeps = mutableSetOf<ComponentTreeDepsIr>()
+    aggregatedRoots.filter { !it.isTestRoot }.forEach { aggregatedRoot ->
+      componentTreeDeps.add(ComponentTreeDepsIr(
+          name = ComponentTreeDepsNameGenerator().generate(aggregatedRoot.root),
+          rootDeps = setOf(aggregatedRoot.fqName),
+          defineComponentDeps = defineComponentDeps.map { it.fqName }.toSet(),
+          aliasOfDeps = aliasOfDeps.map { it.fqName }.toSet(),
+          aggregatedDeps =
+            // @AggregatedDeps with non-empty replaces are from @TestInstallIn and should not be
+            // installed in production components
+            aggregatedDeps.filter { it.replaces.isEmpty() }.map { it.fqName }.toSet(),
+          uninstallModulesDeps = emptySet(),
+          earlyEntryPointDeps = emptySet(),
+      ))
+    }
+    return componentTreeDeps
   }
 
   private fun testComponents(): Set<ComponentTreeDepsIr> {
     val rootsUsingSharedComponent = rootsUsingSharedComponent(aggregatedRoots)
-    val aggregatedRootsByRoot = aggregatedRoots.associateBy { it.root }
+    val aggregatedRootsByRoot = aggregatedRoots.filter { it.isTestRoot }.associateBy { it.root }
     val aggregatedDepsByRoot =
       aggregatedDepsByRoot(
         aggregatedRoots = aggregatedRoots,
@@ -67,8 +67,11 @@ private constructor(
         val rootName =
           if (isDefaultRoot) {
             DEFAULT_ROOT_CLASS_NAME
-          } else {
+          } else if (aggregatedRootsByRoot.containsKey(root)) {
             aggregatedRootsByRoot.getValue(root).originatingRoot
+          } else {
+            // If it isn't contained in the map of roots, it is a production root and can be skipped
+            return@forEach
           }
         val componentNameGenerator =
           if (isSharedTestComponentsEnabled) {
@@ -241,7 +244,6 @@ private constructor(
 
     @JvmStatic
     fun components(
-      isTest: Boolean,
       isSharedTestComponentsEnabled: Boolean,
       aggregatedRoots: Set<AggregatedRootIr>,
       defineComponentDeps: Set<DefineComponentClassesIr>,
@@ -249,8 +251,8 @@ private constructor(
       aggregatedDeps: Set<AggregatedDepsIr>,
       aggregatedUninstallModulesDeps: Set<AggregatedUninstallModulesIr>,
       aggregatedEarlyEntryPointDeps: Set<AggregatedEarlyEntryPointIr>,
-    ) =
-      ComponentTreeDepsIrCreator(
+    ): Set<ComponentTreeDepsIr> {
+      val creator = ComponentTreeDepsIrCreator(
           isSharedTestComponentsEnabled,
           // TODO(bcorso): Consider creating a common interface for fqName so that we can sort these
           // using a shared method rather than repeating the sorting logic.
@@ -260,14 +262,20 @@ private constructor(
           aggregatedDeps.toList().sortedBy { it.fqName.canonicalName() }.toSet(),
           aggregatedUninstallModulesDeps.toList().sortedBy { it.fqName.canonicalName() }.toSet(),
           aggregatedEarlyEntryPointDeps.toList().sortedBy { it.fqName.canonicalName() }.toSet()
-        )
-        .let { producer ->
-          if (isTest) {
-            producer.testComponents()
-          } else {
-            producer.prodComponents()
-          }
-        }
+      )
+
+      // AggregatedRootIrValidator should enforce rules on the roots, so just handle both prod and
+      // test roots.
+      val componentTreeDeps = mutableSetOf<ComponentTreeDepsIr>()
+
+      // Only add test components if there are test roots though as this will automatically add a
+      // default root.
+      if (aggregatedRoots.stream().anyMatch(AggregatedRootIr::isTestRoot)) {
+        componentTreeDeps.addAll(creator.testComponents())
+      }
+      componentTreeDeps.addAll(creator.prodComponents())
+      return componentTreeDeps
+    }
 
     val DEFAULT_ROOT_CLASS_NAME: ClassName =
       ClassName.get("dagger.hilt.android.internal.testing.root", "Default")

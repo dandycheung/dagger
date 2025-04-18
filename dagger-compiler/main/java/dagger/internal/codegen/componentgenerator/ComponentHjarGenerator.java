@@ -16,16 +16,15 @@
 
 package dagger.internal.codegen.componentgenerator;
 
-import static androidx.room.compiler.codegen.compat.XConverters.toJavaPoet;
 import static com.google.common.base.CaseFormat.LOWER_CAMEL;
 import static com.google.common.base.CaseFormat.UPPER_CAMEL;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Iterables.getOnlyElement;
-import static com.squareup.javapoet.MethodSpec.constructorBuilder;
 import static dagger.internal.codegen.base.ComponentCreatorKind.BUILDER;
 import static dagger.internal.codegen.langmodel.Accessibility.isElementAccessibleFrom;
 import static dagger.internal.codegen.writing.ComponentNames.getTopLevelClassName;
 import static dagger.internal.codegen.xprocessing.XElements.getSimpleName;
+import static dagger.internal.codegen.xprocessing.XFunSpecs.constructorBuilder;
 import static dagger.internal.codegen.xprocessing.XTypeElements.getAllUnimplementedMethods;
 import static javax.lang.model.element.Modifier.FINAL;
 import static javax.lang.model.element.Modifier.PRIVATE;
@@ -33,6 +32,7 @@ import static javax.lang.model.element.Modifier.PUBLIC;
 import static javax.lang.model.element.Modifier.STATIC;
 
 import androidx.room.compiler.codegen.XClassName;
+import androidx.room.compiler.codegen.XFunSpec;
 import androidx.room.compiler.codegen.XTypeName;
 import androidx.room.compiler.codegen.XTypeSpec;
 import androidx.room.compiler.processing.XElement;
@@ -44,8 +44,6 @@ import androidx.room.compiler.processing.XTypeElement;
 import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
-import com.squareup.javapoet.MethodSpec;
-import com.squareup.javapoet.TypeName;
 import dagger.internal.codegen.base.ComponentCreatorKind;
 import dagger.internal.codegen.base.SourceFileGenerator;
 import dagger.internal.codegen.binding.ComponentCreatorDescriptor;
@@ -53,7 +51,7 @@ import dagger.internal.codegen.binding.ComponentDescriptor;
 import dagger.internal.codegen.binding.ComponentRequirement;
 import dagger.internal.codegen.binding.MethodSignature;
 import dagger.internal.codegen.compileroption.CompilerOptions;
-import dagger.internal.codegen.xprocessing.MethodSpecs;
+import dagger.internal.codegen.xprocessing.XFunSpecs;
 import dagger.internal.codegen.xprocessing.XTypeNames;
 import dagger.internal.codegen.xprocessing.XTypeSpecs;
 import java.util.Set;
@@ -96,7 +94,7 @@ final class ComponentHjarGenerator extends SourceFileGenerator<ComponentDescript
     XTypeSpecs.Builder generatedComponent =
         XTypeSpecs.classBuilder(generatedTypeName)
             .addModifiers(FINAL)
-            .addMethod(privateConstructor());
+            .addFunction(privateConstructor());
     if (componentDescriptor.typeElement().isPublic()) {
       generatedComponent.addModifiers(PUBLIC);
     }
@@ -118,7 +116,7 @@ final class ComponentHjarGenerator extends SourceFileGenerator<ComponentDescript
       XTypeSpecs.Builder builder =
           XTypeSpecs.classBuilder("Builder")
               .addModifiers(STATIC, FINAL)
-              .addMethod(privateConstructor());
+              .addFunction(privateConstructor());
       if (componentDescriptor.typeElement().isPublic()) {
         builder.addModifiers(PUBLIC);
       }
@@ -129,18 +127,18 @@ final class ComponentHjarGenerator extends SourceFileGenerator<ComponentDescript
       noArgFactoryMethod = true;
       componentRequirements(componentDescriptor)
           .map(requirement -> builderSetterMethod(requirement.typeElement(), builderClassName))
-          .forEach(builder::addMethod);
-      builder.addMethod(builderBuildMethod(componentDescriptor));
+          .forEach(builder::addFunction);
+      builder.addFunction(builderBuildMethod(componentDescriptor));
       generatedComponent.addType(builder.build());
     }
 
-    generatedComponent.addMethod(staticCreatorMethod(builderMethodReturnType, creatorKind));
+    generatedComponent.addFunction(staticCreatorMethod(builderMethodReturnType, creatorKind));
 
     if (noArgFactoryMethod
         && !hasBindsInstanceMethods(componentDescriptor)
         && componentRequirements(componentDescriptor)
             .noneMatch(ComponentRequirement::requiresAPassedInstance)) {
-      generatedComponent.addMethod(createMethod(componentDescriptor));
+      generatedComponent.addFunction(createMethod(componentDescriptor));
     }
 
     if (compilerOptions.generatedClassExtendsComponent()) {
@@ -155,24 +153,24 @@ final class ComponentHjarGenerator extends SourceFileGenerator<ComponentDescript
                       MethodSignature.forComponentMethod(method, componentType, processingEnv)))
           .forEach(
               method ->
-                  generatedComponent.addMethod(
+                  generatedComponent.addFunction(
                       emptyComponentMethod(componentElement, method.methodElement())));
 
       if (componentDescriptor.isProduction()) {
         generatedComponent
             .addSuperinterface(XTypeNames.CANCELLATION_LISTENER)
-            .addMethod(onProducerFutureCancelledMethod());
+            .addFunction(onProducerFutureCancelledMethod());
       }
     }
 
     return ImmutableList.of(generatedComponent.build());
   }
 
-  private MethodSpec emptyComponentMethod(XTypeElement typeElement, XMethodElement baseMethod) {
-    return MethodSpecs.overriding(baseMethod, typeElement.getType()).build();
+  private XFunSpec emptyComponentMethod(XTypeElement typeElement, XMethodElement baseMethod) {
+    return XFunSpecs.overriding(baseMethod, typeElement.getType()).build();
   }
 
-  private static MethodSpec privateConstructor() {
+  private static XFunSpec privateConstructor() {
     return constructorBuilder().addModifiers(PRIVATE).build();
   }
 
@@ -217,42 +215,42 @@ final class ComponentHjarGenerator extends SourceFileGenerator<ComponentDescript
             && getOnlyElement(method.getParameters()).hasAnnotation(XTypeNames.BINDS_INSTANCE));
   }
 
-  private static MethodSpec builderSetterMethod(
+  private static XFunSpec builderSetterMethod(
       XTypeElement componentRequirement, XClassName builderClass) {
     String simpleName = UPPER_CAMEL.to(LOWER_CAMEL, getSimpleName(componentRequirement));
-    return MethodSpec.methodBuilder(simpleName)
+    return XFunSpecs.methodBuilder(simpleName)
         .addModifiers(PUBLIC)
-        .addParameter(componentRequirement.getClassName(), simpleName)
-        .returns(toJavaPoet(builderClass))
+        .addParameter(simpleName, componentRequirement.asClassName())
+        .returns(builderClass)
         .build();
   }
 
-  private static MethodSpec builderBuildMethod(ComponentDescriptor component) {
-    return MethodSpec.methodBuilder("build")
+  private static XFunSpec builderBuildMethod(ComponentDescriptor component) {
+    return XFunSpecs.methodBuilder("build")
         .addModifiers(PUBLIC)
-        .returns(component.typeElement().getClassName())
+        .returns(component.typeElement().asClassName())
         .build();
   }
 
-  private static MethodSpec staticCreatorMethod(
+  private static XFunSpec staticCreatorMethod(
       XTypeName creatorMethodReturnType, ComponentCreatorKind creatorKind) {
-    return MethodSpec.methodBuilder(Ascii.toLowerCase(creatorKind.typeName()))
+    return XFunSpecs.methodBuilder(Ascii.toLowerCase(creatorKind.typeName()))
         .addModifiers(PUBLIC, STATIC)
-        .returns(toJavaPoet(creatorMethodReturnType))
+        .returns(creatorMethodReturnType)
         .build();
   }
 
-  private static MethodSpec createMethod(ComponentDescriptor componentDescriptor) {
-    return MethodSpec.methodBuilder("create")
+  private static XFunSpec createMethod(ComponentDescriptor componentDescriptor) {
+    return XFunSpecs.methodBuilder("create")
         .addModifiers(PUBLIC, STATIC)
-        .returns(componentDescriptor.typeElement().getClassName())
+        .returns(componentDescriptor.typeElement().asClassName())
         .build();
   }
 
-  private static MethodSpec onProducerFutureCancelledMethod() {
-    return MethodSpec.methodBuilder("onProducerFutureCancelled")
+  private static XFunSpec onProducerFutureCancelledMethod() {
+    return XFunSpecs.methodBuilder("onProducerFutureCancelled")
         .addModifiers(PUBLIC)
-        .addParameter(TypeName.BOOLEAN, "mayInterruptIfRunning")
+        .addParameter("mayInterruptIfRunning", XTypeName.PRIMITIVE_BOOLEAN)
         .build();
   }
 }

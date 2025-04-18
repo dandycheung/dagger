@@ -38,17 +38,26 @@ final class ComponentTree {
   private final ComponentDescriptor root;
 
   /** Creates a new tree from a set of descriptors. */
-  static ComponentTree from(Set<ComponentDescriptor> descriptors) {
+  static ComponentTree from(Set<ComponentDescriptor> descriptors, ComponentDescriptor root) {
     MutableGraph<ComponentDescriptor> graph =
         GraphBuilder.directed().allowsSelfLoops(false).build();
 
     descriptors.forEach(
         descriptor -> {
-          graph.addNode(descriptor);
-          descriptor.parent().ifPresent(parent -> graph.putEdge(parent, descriptor));
+          // Only add components that have builders (besides the root component) since if
+          // we didn't find any builder class, then we don't need to generate the component
+          // since it would be inaccessible.
+          if (descriptor.creator().isPresent() || descriptor.isRoot()) {
+            graph.addNode(descriptor);
+            descriptor.parent().ifPresent(parent -> graph.putEdge(parent, descriptor));
+          }
         });
 
-    return new ComponentTree(ImmutableGraph.copyOf(graph));
+    // Only include nodes that are reachable from the given root. Also, the graph may still
+    // have nodes that are children of components that don't have builders that need to
+    // be removed as well.
+    return new ComponentTree(ImmutableGraph.copyOf(
+        Graphs.inducedSubgraph(graph, Graphs.reachableNodes(graph, root))));
   }
 
   private ComponentTree(ImmutableGraph<ComponentDescriptor> graph) {

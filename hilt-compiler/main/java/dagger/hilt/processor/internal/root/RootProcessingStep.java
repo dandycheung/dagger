@@ -184,11 +184,8 @@ public final class RootProcessingStep extends BaseProcessingStep {
             .map(AggregatedEarlyEntryPointMetadata::toIr)
             .collect(toImmutableSet());
 
-    // We should be guaranteed that there are no mixed roots, so check if this is prod or test.
-    boolean isTest = aggregatedRoots.stream().anyMatch(AggregatedRootIr::isTestRoot);
     Set<ComponentTreeDepsIr> componentTreeDeps =
         ComponentTreeDepsIrCreator.components(
-            isTest,
             isSharedTestComponentsEnabled(processingEnv()),
             aggregatedRoots,
             defineComponentDeps,

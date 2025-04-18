@@ -115,7 +115,6 @@ DEPS = [
     "//dagger-compiler/main/java/dagger/internal/codegen/bindinggraphvalidation",
     "//dagger-compiler/main/java/dagger/internal/codegen/compileroption",
     "//dagger-compiler/main/java/dagger/internal/codegen/javac",
-    "//dagger-compiler/main/java/dagger/internal/codegen/javapoet",
     "//dagger-compiler/main/java/dagger/internal/codegen/kotlin",
     "//dagger-compiler/main/java/dagger/internal/codegen/langmodel",
     "//dagger-compiler/main/java/dagger/internal/codegen/model",

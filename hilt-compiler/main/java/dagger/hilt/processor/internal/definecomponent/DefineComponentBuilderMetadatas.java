@@ -38,7 +38,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /** Metadata for types annotated with {@link dagger.hilt.DefineComponent.Builder}. */
-final class DefineComponentBuilderMetadatas {
+public final class DefineComponentBuilderMetadatas {
   static DefineComponentBuilderMetadatas create(DefineComponentMetadatas componentMetadatas) {
     return new DefineComponentBuilderMetadatas(componentMetadatas);
   }
@@ -55,6 +55,24 @@ final class DefineComponentBuilderMetadatas {
       builderMetadatas.put(element, getUncached(element));
     }
     return builderMetadatas.get(element);
+  }
+
+  /**
+   * Returns the component built by a type annotated by DefineComponent.Builder.
+   * This method does not do validation beyond what is necessary to get the component this
+   * builder is for. It is assumed that the validation will be done as part of processing
+   * the DefineComponent.Builder type itself.
+   */
+  public static XType getComponentTypeFromBuilder(XTypeElement builder) {
+    ProcessorErrors.checkState(
+        builder.hasAnnotation(ClassNames.DEFINE_COMPONENT_BUILDER),
+        builder,
+        "%s, expected to be annotated with @DefineComponent.Builder. Found: %s",
+        XElements.toStableString(builder),
+        builder.getAllAnnotations().stream()
+            .map(XAnnotations::toStableString)
+            .collect(toImmutableList()));
+    return getComponentType(builder, getBuildMethod(builder));
   }
 
   private DefineComponentBuilderMetadata getUncached(XElement element) {
@@ -106,32 +124,8 @@ final class DefineComponentBuilderMetadatas {
             .map(XElements::toStableString)
             .collect(toImmutableList()));
 
-    ImmutableList<XMethodElement> buildMethods =
-        builder.getDeclaredMethods().stream()
-            .filter(method -> !method.isStatic())
-            .filter(method -> method.getParameters().isEmpty())
-            .collect(toImmutableList());
-
-    ProcessorErrors.checkState(
-        buildMethods.size() == 1,
-        builder,
-        "@DefineComponent.Builder %s, must have exactly 1 build method that takes no parameters. "
-            + "Found: %s",
-        XElements.toStableString(builder),
-        buildMethods.stream()
-            .map(XElements::toStableString)
-            .collect(toImmutableList()));
-
-    XMethodElement buildMethod = buildMethods.get(0);
-    XType componentType = buildMethod.getReturnType();
-    ProcessorErrors.checkState(
-        isDeclared(componentType)
-            && componentType.getTypeElement().hasAnnotation(ClassNames.DEFINE_COMPONENT),
-        builder,
-        "@DefineComponent.Builder method, %s#%s, must return a @DefineComponent type. Found: %s",
-        XElements.toStableString(builder),
-        XElements.toStableString(buildMethod),
-        XTypes.toStableString(componentType));
+    XMethodElement buildMethod = getBuildMethod(builder);
+    XType componentType = getComponentType(builder, buildMethod);
 
     ImmutableList<XMethodElement> nonStaticNonBuilderMethods =
         builder.getDeclaredMethods().stream()
@@ -155,6 +149,39 @@ final class DefineComponentBuilderMetadatas {
         builder,
         buildMethod,
         componentMetadatas.get(componentType.getTypeElement()));
+  }
+
+  private static XMethodElement getBuildMethod(XTypeElement builder) {
+    ImmutableList<XMethodElement> buildMethods =
+        builder.getDeclaredMethods().stream()
+            .filter(method -> !method.isStatic())
+            .filter(method -> method.getParameters().isEmpty())
+            .collect(toImmutableList());
+
+    ProcessorErrors.checkState(
+        buildMethods.size() == 1,
+        builder,
+        "@DefineComponent.Builder %s, must have exactly 1 build method that takes no parameters. "
+            + "Found: %s",
+        XElements.toStableString(builder),
+        buildMethods.stream()
+            .map(XElements::toStableString)
+            .collect(toImmutableList()));
+
+    return buildMethods.get(0);
+  }
+
+  private static XType getComponentType(XTypeElement builder, XMethodElement buildMethod) {
+    XType componentType = buildMethod.getReturnType();
+    ProcessorErrors.checkState(
+        isDeclared(componentType)
+            && componentType.getTypeElement().hasAnnotation(ClassNames.DEFINE_COMPONENT),
+        builder,
+        "@DefineComponent.Builder method, %s#%s, must return a @DefineComponent type. Found: %s",
+        XElements.toStableString(builder),
+        XElements.toStableString(buildMethod),
+        XTypes.toStableString(componentType));
+    return componentType;
   }
 
   @AutoValue

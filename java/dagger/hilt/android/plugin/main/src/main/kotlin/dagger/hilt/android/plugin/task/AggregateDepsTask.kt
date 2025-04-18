@@ -106,7 +106,6 @@ abstract class AggregateDepsTask @Inject constructor(
         return
       }
       val componentTrees = ComponentTreeDepsIrCreator.components(
-        isTest = parameters.testEnvironment.get(),
         isSharedTestComponentsEnabled = true,
         aggregatedRoots = rootsToProcess,
         defineComponentDeps = aggregator.defineComponentDeps,
