@@ -115,3 +115,25 @@ GenKtTests(
         "//third_party/java/truth",
     ],
 )
+
+GenKtTests(
+    name = "JavaSetMultibindingTest",
+    srcs = ["JavaSetMultibindingTest.kt"],
+    javacopts = DOCLINT_HTML_AND_SYNTAX + DOCLINT_REFERENCES,
+    deps = [
+        "//third_party/java/dagger",
+        "//third_party/java/junit",
+        "//third_party/java/truth",
+    ],
+)
+
+GenKtTests(
+    name = "JavaMapMultibindingTest",
+    srcs = ["JavaMapMultibindingTest.kt"],
+    javacopts = DOCLINT_HTML_AND_SYNTAX + DOCLINT_REFERENCES,
+    deps = [
+        "//third_party/java/dagger",
+        "//third_party/java/junit",
+        "//third_party/java/truth",
+    ],
+)
