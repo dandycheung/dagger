@@ -98,4 +98,8 @@ public enum ComponentKind {
   public boolean isProducer() {
     return PRODUCER_KINDS.contains(this);
   }
+
+  public boolean isSubcomponent() {
+    return this.equals(SUBCOMPONENT) || this.equals(PRODUCTION_SUBCOMPONENT);
+  }
 }

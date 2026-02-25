@@ -44,7 +44,7 @@ public interface BindingGraphValidationModule {
       ProvisionDependencyOnProducerBindingValidator validation9,
       InvalidProductionBindingScopeValidator validation10,
       SetMultibindingValidator validation11,
-      SubcomponentFactoryMethodValidator validation12) {
+    SubcomponentFactoryMethodValidator validation12) {
     ImmutableSet.Builder<ValidationBindingGraphPlugin> builder =
         ImmutableSet.<ValidationBindingGraphPlugin>builder()
             .add(validation1)

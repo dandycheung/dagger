@@ -677,7 +677,7 @@ public final class BindingGraphFactory {
 
       boolean requiresResolution(BindingNode binding) {
         // If we're not allowed to float then the binding cannot be re-resolved in this component.
-        if (isNotAllowedToFloat(binding)) {
+        if (!isAllowedToFloat(binding)) {
           return false;
         }
         if (hasLocalBindings(binding)) {
@@ -692,14 +692,16 @@ public final class BindingGraphFactory {
             && (dependsOnLocalBinding(binding) || dependsOnMissingBinding(binding));
       }
 
-      private boolean isNotAllowedToFloat(BindingNode binding) {
+      private boolean isAllowedToFloat(BindingNode binding) {
+        if(binding.kind() == BindingKind.INJECTION
+            || binding.kind() == BindingKind.ASSISTED_INJECTION) {
+          return true;
+        }
         // In general, @Provides/@Binds/@Production bindings are allowed to float to get access to
         // multibinding contributions that are contributed in subcomponents. However, they aren't
         // allowed to float to get access to missing bindings that are installed in subcomponents,
         // so we prevent floating if these bindings depend on a missing binding.
-        return binding.kind() != BindingKind.INJECTION
-            && binding.kind() != BindingKind.ASSISTED_INJECTION
-            && dependsOnMissingBinding(binding);
+        return !dependsOnMissingBinding(binding);
       }
 
       private boolean dependsOnMissingBinding(BindingNode binding) {
