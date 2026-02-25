@@ -87,8 +87,8 @@ public final class FrameworkField {
   /**
    * A framework field for a {@link ContributionBinding}.
    *
-   * @param frameworkClass if present, the field will use this framework class instead of the normal
-   *     one for the binding's type.
+   * @param frameworkClassName if present, the field will use this framework class instead of the
+   *     normal one for the binding's type.
    */
   public static FrameworkField forBinding(
       ContributionBinding binding,
