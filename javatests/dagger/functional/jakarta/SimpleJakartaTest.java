@@ -24,6 +24,8 @@ import dagger.Module;
 import jakarta.inject.Inject;
 import jakarta.inject.Qualifier;
 import jakarta.inject.Scope;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -31,9 +33,11 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public final class SimpleJakartaTest {
 
+  @Retention(RetentionPolicy.RUNTIME)
   @Scope
   public @interface TestScope {}
 
+  @Retention(RetentionPolicy.RUNTIME)
   @Qualifier
   public @interface TestQualifier {}
 
