@@ -35,7 +35,6 @@ java_library(
         "//dagger-runtime/main/java/dagger:core",
         "//dagger-spi",
         "//third_party/java/auto:value",
-        "//third_party/java/error_prone:annotations",
         "//third_party/java/guava/base",
         "//third_party/java/guava/collect",
         "//third_party/java/guava/graph",

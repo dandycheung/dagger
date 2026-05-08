@@ -34,6 +34,5 @@ java_library(
         "//third_party/java/guava/graph",
         "//third_party/java/javapoet",
         "//third_party/java/jsr330_inject:jsr330_inject_without_dagger",
-        "//third_party/kotlin/kotlin_symbol_processing:symbol-processing-api",
     ],
 )
