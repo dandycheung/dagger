@@ -31,6 +31,7 @@ import static dagger.internal.codegen.compileroption.ProcessingEnvironmentCompil
 import static dagger.internal.codegen.compileroption.ProcessingEnvironmentCompilerOptions.Feature.GENERATED_CLASS_EXTENDS_COMPONENT;
 import static dagger.internal.codegen.compileroption.ProcessingEnvironmentCompilerOptions.Feature.IGNORE_PROVISION_KEY_WILDCARDS;
 import static dagger.internal.codegen.compileroption.ProcessingEnvironmentCompilerOptions.Feature.INCLUDE_STACKTRACE_WITH_DEFERRED_ERROR_MESSAGES;
+import static dagger.internal.codegen.compileroption.ProcessingEnvironmentCompilerOptions.Feature.MAP_MULTIBINDING_DUPLICATE_DETECTION_FIX;
 import static dagger.internal.codegen.compileroption.ProcessingEnvironmentCompilerOptions.Feature.PLUGINS_VISIT_FULL_BINDING_GRAPHS;
 import static dagger.internal.codegen.compileroption.ProcessingEnvironmentCompilerOptions.Feature.STRICT_MULTIBINDING_VALIDATION;
 import static dagger.internal.codegen.compileroption.ProcessingEnvironmentCompilerOptions.Feature.STRICT_SUPERFICIAL_VALIDATION;
@@ -78,6 +79,7 @@ public final class ProcessingEnvironmentCompilerOptions extends CompilerOptions 
   private static final String KEYS_PER_COMPONENT_SHARD = "dagger.keysPerComponentShard";
 
   private final XProcessingEnv processingEnv;
+
   private final XMessager messager;
   private final Map<String, String> options;
   private final Map<EnumOption<?>, Object> enumOptions = new HashMap<>();
@@ -207,6 +209,11 @@ public final class ProcessingEnvironmentCompilerOptions extends CompilerOptions 
   @Override
   public boolean useBindingGraphFix() {
     return isEnabled(USE_BINDING_GRAPH_FIX);
+  }
+
+  @Override
+  public boolean mapMultibindingDuplicateDetectionFix() {
+    return isEnabled(MAP_MULTIBINDING_DUPLICATE_DETECTION_FIX);
   }
 
   @Override
@@ -348,8 +355,9 @@ public final class ProcessingEnvironmentCompilerOptions extends CompilerOptions 
 
     IGNORE_PROVISION_KEY_WILDCARDS(ENABLED),
 
-    VALIDATE_TRANSITIVE_COMPONENT_DEPENDENCIES(ENABLED)
-    ;
+    VALIDATE_TRANSITIVE_COMPONENT_DEPENDENCIES(ENABLED),
+
+    MAP_MULTIBINDING_DUPLICATE_DETECTION_FIX(DISABLED);
 
     final FeatureStatus defaultValue;
 
@@ -446,10 +454,10 @@ public final class ProcessingEnvironmentCompilerOptions extends CompilerOptions 
     return ImmutableSet.<String>builder()
         .addAll(
             Stream.<CommandLineOption[]>of(
-                KeyOnlyOption.values(), Feature.values(), Validation.values())
-            .flatMap(Arrays::stream)
-            .flatMap(CommandLineOption::allNames)
-            .collect(toImmutableSet()))
+                    KeyOnlyOption.values(), Feature.values(), Validation.values())
+                .flatMap(Arrays::stream)
+                .flatMap(CommandLineOption::allNames)
+                .collect(toImmutableSet()))
         .add(KEYS_PER_COMPONENT_SHARD)
         .build();
   }

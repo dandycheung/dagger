@@ -157,4 +157,15 @@ public abstract class CompilerOptions {
    * for {@code Foo<? extends Bar>} and {@code Foo<Bar>} would result in a duplicate binding error.
    */
   public abstract boolean ignoreProvisionKeyWildcards();
+
+  /**
+   * Returns {@code true} if Dagger should enforce strict duplicate detection of multibinding
+   * contributions across parent and child component boundaries.
+   *
+   * <p>When this option is disabled (returns {@code false}), Dagger preserves the legacy lenient
+   * behavior, allowing duplicate multibinding contributions across component boundaries. When
+   * enabled (returns {@code true}), Dagger enforces strict duplicate detection across component
+   * boundaries at compile time (for Maps) and runtime (for Sets).
+   */
+  public abstract boolean mapMultibindingDuplicateDetectionFix();
 }
