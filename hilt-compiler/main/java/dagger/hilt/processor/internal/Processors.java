@@ -121,10 +121,12 @@ public final class Processors {
     ProcessorErrors.checkState(
         values.size() >= 1,
         annotation.getTypeElement(),
-        "@%s, '%s' class is invalid or missing: %s",
-        annotation.getName(),
-        key,
-        XAnnotations.toStableString(annotation));
+        () ->
+            String.format(
+                "@%s, '%s' class is invalid or missing: %s",
+                annotation.getName(),
+                key,
+                XAnnotations.toStableString(annotation)));
 
     return values;
   }

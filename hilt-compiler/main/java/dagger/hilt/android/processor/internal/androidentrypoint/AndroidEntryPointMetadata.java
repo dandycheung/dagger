@@ -220,9 +220,11 @@ public abstract class AndroidEntryPointMetadata {
     ProcessorErrors.checkState(
         hiltAnnotations.size() == 1,
         element,
-        "Expected exactly 1 of %s. Found: %s",
-        HILT_ANNOTATION_NAMES.stream().map(ClassName::canonicalName).collect(toImmutableSet()),
-        hiltAnnotations.stream().map(XAnnotations::toStableString).collect(toImmutableSet()));
+        () -> String.format(
+            "Expected exactly 1 of %s. Found: %s",
+            HILT_ANNOTATION_NAMES.stream().map(ClassName::canonicalName).collect(toImmutableSet()),
+            hiltAnnotations.stream().map(XAnnotations::toStableString).collect(toImmutableSet())));
+
     ClassName annotationClassName = getOnlyElement(hiltAnnotations).getClassName();
 
     ProcessorErrors.checkState(

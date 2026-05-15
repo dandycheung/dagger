@@ -22,6 +22,7 @@ import com.google.common.base.Preconditions;
 import com.google.errorprone.annotations.FormatMethod;
 import com.google.errorprone.annotations.FormatString;
 import java.util.Collection;
+import java.util.function.Supplier;
 import javax.annotation.Nullable;
 
 /** Static helper methods for throwing errors during code generation. */
@@ -72,6 +73,20 @@ public final class ProcessorErrors {
    * involving any parameters to the calling method.
    *
    * @param expression a boolean expression
+   * @param errorMessageSupplier the supplier to construct the exception message if the check fails
+   * @throws BadInputException if {@code expression} is false
+   */
+  public static void checkState(boolean expression, Supplier<String> errorMessageSupplier) {
+    if (!expression) {
+      throw new BadInputException(errorMessageSupplier.get());
+    }
+  }
+
+  /**
+   * Ensures the truth of an expression involving the state of the calling instance, but not
+   * involving any parameters to the calling method.
+   *
+   * @param expression a boolean expression
    * @param badElement the element that was at fault
    * @param errorMessage the exception message to use if the check fails; will be converted to a
    *     string using {@link String#valueOf(Object)}
@@ -114,6 +129,23 @@ public final class ProcessorErrors {
     if (!expression) {
       throw new BadInputException(
           String.format(errorMessageTemplate, errorMessageArgs), badElement);
+    }
+  }
+
+  /**
+   * Ensures the truth of an expression involving the state of the calling instance, but not
+   * involving any parameters to the calling method.
+   *
+   * @param expression a boolean expression
+   * @param badElement the element that was at fault
+   * @param errorMessageSupplier the supplier to construct the exception message if the check fails
+   * @throws BadInputException if {@code expression} is false
+   */
+  public static void checkState(
+      boolean expression, XElement badElement, Supplier<String> errorMessageSupplier) {
+    Preconditions.checkNotNull(badElement);
+    if (!expression) {
+      throw new BadInputException(errorMessageSupplier.get(), badElement);
     }
   }
 
