@@ -23,7 +23,6 @@ import static dagger.internal.codegen.extension.DaggerStreams.toImmutableList;
 import static dagger.internal.codegen.extension.DaggerStreams.toImmutableSet;
 import static dagger.internal.codegen.xprocessing.XElements.getSimpleName;
 import static java.util.stream.Collectors.joining;
-import static kotlin.streams.jdk8.StreamsKt.asStream;
 
 import androidx.room3.compiler.processing.JavaPoetExtKt;
 import androidx.room3.compiler.processing.XAnnotation;
@@ -37,7 +36,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
@@ -269,12 +267,20 @@ final class Generators {
   /** Returns the nearest super class method for the given method signature. */
   static XMethodElement nearestSuperClassMethod(
       MethodSignature methodSignature, AndroidEntryPointMetadata metadata) {
-    ImmutableList<XMethodElement> methodOnBaseElement =
-        asStream(metadata.baseElement().getAllMethods())
-            .filter(method -> MethodSignature.of(method).equals(methodSignature))
-            .collect(toImmutableList());
-    Preconditions.checkState(methodOnBaseElement.size() >= 1);
-    return Iterables.getLast(methodOnBaseElement);
+    // We do a top-down traversal of the class hierarchy, looking for the first matching method.
+    // We purposely avoid getAllMethods() since it resolves more than we typically need here.
+    XTypeElement currentClass = metadata.baseElement();
+    while (currentClass != null) {
+      for (XMethodElement method : currentClass.getDeclaredMethods()) {
+        if (MethodSignature.of(method).equals(methodSignature)) {
+          return method;
+        }
+      }
+      XType superClass = currentClass.getSuperClass();
+      currentClass = superClass != null ? superClass.getTypeElement() : null;
+    }
+
+    throw new IllegalStateException("Method not found for signature: " + methodSignature);
   }
 
   // @Override
