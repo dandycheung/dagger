@@ -145,10 +145,22 @@ public abstract class CompilerOptions {
   }
 
   /**
-   * Each switch size is fixed at 100 cases each and put in its own method. This is to limit the
-   * size of the methods so that we don't reach the "huge" method size limit for Android that will
-   * prevent it from being AOT compiled in some versions of Android (b/77652521). This generally
-   * starts to happen around 1500 cases, but we are choosing 100 to be safe.
+   * Each switch size is fixed at 100 cases each and put in its own method.
+   *
+   * <p>This balances trade-offs between compile-time / bytecode overhead and Android runtime AOT
+   * compilation:
+   *
+   * <ul>
+   *   <li><b>Upper bound</b>: Large switch methods risk hitting the "huge" method size limit for
+   *       Android that prevents AOT compilation in some versions of Android (b/77652521, generally
+   *       around 1500 cases). Additionally, ART decides whether to AOT compile a method based on
+   *       whether the path is "hot" at runtime; keeping switch methods reasonably small ensures that
+   *       a single hot case does not force ART to compile a disproportionately large method and
+   *       consume extra runtime memory.
+   *   <li><b>Lower bound</b>: Making the number too small results in many small helper methods,
+   *       which increases classfile / bytecode size, constant pool overhead, DEX method count, and
+   *       javac attribution time (b/549228393).
+   * </ul>
    */
   // TODO(bcorso): Include a proguard_spec in the Dagger library to prevent inlining these methods?
   public int casesPerSwitchingProviderSwitch() {
