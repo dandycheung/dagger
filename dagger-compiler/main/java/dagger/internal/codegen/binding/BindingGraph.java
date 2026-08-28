@@ -27,7 +27,9 @@ import static dagger.internal.codegen.extension.DaggerStreams.toImmutableMap;
 import static dagger.internal.codegen.extension.DaggerStreams.toImmutableSet;
 
 import androidx.room3.compiler.processing.XExecutableElement;
+import androidx.room3.compiler.processing.XExecutableType;
 import androidx.room3.compiler.processing.XMethodElement;
+import androidx.room3.compiler.processing.XType;
 import androidx.room3.compiler.processing.XTypeElement;
 import com.google.auto.value.AutoValue;
 import com.google.auto.value.extension.memoized.Memoized;
@@ -409,8 +411,10 @@ public abstract class BindingGraph {
    */
   // TODO(dpb): Consider disallowing modules if none of their bindings are used.
   public final ImmutableSet<ComponentRequirement> factoryMethodRequirements() {
-    return factoryMethod().get().getParameters().stream()
-        .map(parameter -> ComponentRequirement.forModule(parameter.getType()))
+    XType parentType = componentPath().parentComponent().xprocessing().getType();
+    XExecutableType resolvedFactoryMethod = factoryMethod().get().asMemberOf(parentType);
+    return resolvedFactoryMethod.getParameterTypes().stream()
+        .map(ComponentRequirement::forModule)
         .collect(toImmutableSet());
   }
 
